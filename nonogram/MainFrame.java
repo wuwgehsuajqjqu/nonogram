@@ -3,6 +3,9 @@ package main;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -13,6 +16,7 @@ public class MainFrame extends JFrame {
     private String userId;
     private String filename;
     private long startTime;
+    private Timer timer;  // 타이머 변수 추가
 
     public MainFrame(String userId, String filename) {
         this.userId = userId;
@@ -22,28 +26,22 @@ public class MainFrame extends JFrame {
     public void setupMainPanel() {
         JPanel top = new JPanel(new GridLayout(3, 1));
         setTitle("Demo");
-
         Container pane = getContentPane();
-
         top.setPreferredSize(new Dimension(200, 1));
         JLabel topLabel = new JLabel("Title");
         topLabel.setHorizontalAlignment(SwingConstants.CENTER);
         topLabel.setFont(topLabel.getFont().deriveFont(24.0f));
-
         timerLabel = new JLabel("걸린 시간 : 0 seconds");
         timerLabel.setFont(timerLabel.getFont().deriveFont(24.0f));
         timerLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
         top.add(timerLabel, BorderLayout.CENTER);
         top.add(topLabel, BorderLayout.CENTER);
-
         pane.add(top, BorderLayout.LINE_START);
 
-        String[] puzzleArray = loadPuzzle(filename); //파일에서 퍼즐 로드
-
+        String[] puzzleArray = loadPuzzle(filename);
         startTime = System.currentTimeMillis();
 
-        FullBoard fullBoard = new FullBoard();
+        FullBoard fullBoard = new FullBoard(this); // MainFrame의 인스턴스를 전달
         fullBoard.init(puzzleArray, this, userId, startTime);
 
         JPanel north = new JPanel();
@@ -83,7 +81,7 @@ public class MainFrame extends JFrame {
     }
 
     private void startTimer() {
-        Timer timer = new Timer(1000, e -> {
+        timer = new Timer(1000, e -> {  // 타이머를 클래스 변수로 설정
             secondsElapsed++;
             if (secondsElapsed > 60)
                 timerLabel.setText("걸린 시간: " + secondsElapsed / 60 + "분 " + secondsElapsed % 60 + "초");
@@ -91,6 +89,39 @@ public class MainFrame extends JFrame {
                 timerLabel.setText("걸린 시간 : " + secondsElapsed + "초");
         });
         timer.start();
+    }
+
+    private void saveRanking(String filename, String userId, int timeInSeconds) {
+        try (PrintWriter out = new PrintWriter(new FileWriter(filename, true))) {
+            out.println(userId + "," + timeInSeconds);
+            System.out.println("랭킹 저장: " + filename + " - " + userId + " - " + timeInSeconds + "초");
+        } catch (IOException e) {
+            System.out.println("랭킹 저장 실패: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void endGame() {
+        if (timer != null) {
+            timer.stop();  
+        }
+        int timeInSeconds = secondsElapsed;
+        String rankingFile = getRankingFileForDifficulty();
+        System.out.println("게임 종료. 랭킹 파일에 저장을 시도합니다.");
+        saveRanking(rankingFile, userId, timeInSeconds);
+        JOptionPane.showMessageDialog(this, "게임이 종료되었습니다. 기록이 저장되었습니다.");
+        this.revalidate();
+        this.repaint();
+        dispose();
+        new Start().createAndShowGUI();
+    }
+
+    private String getRankingFileForDifficulty() {
+        if (filename.equals("easy.txt"))
+            return "easy_ranking.txt";
+        if (filename.equals("normal.txt"))
+            return "normal_ranking.txt";
+        return "hard_ranking.txt";
     }
 
     void createAndShowGUI() {
