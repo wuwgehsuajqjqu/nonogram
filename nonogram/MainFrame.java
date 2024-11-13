@@ -16,7 +16,7 @@ public class MainFrame extends JFrame {
     private String userId;
     private String filename;
     private long startTime;
-    private Timer timer;  // 타이머 변수 추가
+    private Timer timer;  
 
     public MainFrame(String userId, String filename) {
         this.userId = userId;
@@ -41,7 +41,7 @@ public class MainFrame extends JFrame {
         String[] puzzleArray = loadPuzzle(filename);
         startTime = System.currentTimeMillis();
 
-        FullBoard fullBoard = new FullBoard(this); // MainFrame의 인스턴스를 전달
+        FullBoard fullBoard = new FullBoard(this); 
         fullBoard.init(puzzleArray, this, userId, startTime);
 
         JPanel north = new JPanel();
